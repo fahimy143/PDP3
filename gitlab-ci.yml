@@ -1,0 +1,43 @@
+stages:
+  - build
+  - test
+
+variables:
+  IMAGE_NAME: patient-service
+
+# Build Stage
+build:
+  stage: build
+  image: maven:3.9-eclipse-temurin-21
+  services:
+    - docker:dind
+  script:
+    - cd "PDP 3 Submission - to be graded/patient-service"
+    - mvn clean package -DskipTests
+    - mkdir -p build-artifacts
+    - cp target/*.jar build-artifacts/
+  artifacts:
+    paths:
+      - PDP 3 Submission - to be graded/patient-service/build-artifacts/
+    expire_in: 1 hour
+
+# Test Stage (Dockerize and Test)
+# Test Stage (Dockerize and Test)
+test:
+  stage: test
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - cd "PDP 3 Submission - to be graded/patient-service"
+    - mkdir -p target
+    - cp build-artifacts/*.jar target/
+    - docker build -t $IMAGE_NAME .
+    - docker-compose up --build --abort-on-container-exit || true
+
+  dependencies:
+    - build
+  artifacts:
+    reports:
+      junit:
+        - PDP 3 Submission - to be graded/patient-service/target/surefire-reports/TEST-*.xml
